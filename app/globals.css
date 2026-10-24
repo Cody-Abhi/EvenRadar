@@ -1,0 +1,111 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Archivo+Black&display=swap");
+@import "mapbox-gl/dist/mapbox-gl.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --paper: #fdf0d5;
+  --ink: #111111;
+}
+
+body {
+  background-color: var(--paper);
+  /* dotted-grid paper, a neobrutalism staple */
+  background-image: radial-gradient(#00000014 1.5px, transparent 1.5px);
+  background-size: 22px 22px;
+  color: var(--ink);
+  font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+@layer components {
+  /* Hard black border + offset drop shadow — the core brutalist card. */
+  .brutal {
+    border: 3px solid #000;
+    box-shadow: 6px 6px 0 0 #000;
+  }
+  .brutal-sm {
+    border: 3px solid #000;
+    box-shadow: 4px 4px 0 0 #000;
+  }
+  /* Buttons/chips that visibly "press" into the page on interaction. */
+  .brutal-press {
+    border: 3px solid #000;
+    box-shadow: 4px 4px 0 0 #000;
+    transition: all 0.15s ease;
+  }
+  .brutal-press:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 6px 6px 0 0 #000;
+  }
+  .brutal-press:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 0 #000;
+  }
+  .display {
+    font-family: "Archivo Black", "Space Grotesk", sans-serif;
+  }
+}
+
+/* Custom interactive kite cursor styles */
+button, a, select, [role="button"], .brutal-press {
+  cursor: pointer;
+}
+input, textarea {
+  cursor: text;
+}
+
+.scroll-thin::-webkit-scrollbar {
+  height: 8px;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: #000;
+  border-radius: 0;
+}
+
+/* Neobrutalist Mapbox styling */
+.mapboxgl-popup-content {
+  border: 3px solid #000 !important;
+  box-shadow: 5px 5px 0 0 #000 !important;
+  border-radius: 0 !important;
+  padding: 14px !important;
+  background: #fff !important;
+  color: #111 !important;
+  font-family: "Space Grotesk", sans-serif !important;
+}
+
+.mapboxgl-popup-tip {
+  border-top-color: #000 !important;
+  border-bottom-color: #000 !important;
+}
+
+.mapboxgl-popup-close-button {
+  font-size: 20px !important;
+  font-weight: 900 !important;
+  padding: 2px 8px !important;
+  color: #000 !important;
+  right: 4px !important;
+  top: 4px !important;
+  line-height: 1 !important;
+}
+
+.mapboxgl-ctrl-group {
+  border: 3px solid #000 !important;
+  box-shadow: 4px 4px 0 0 #000 !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  overflow: hidden;
+}
+
+.mapboxgl-ctrl-group button {
+  border-bottom: 2px solid #000 !important;
+  width: 32px !important;
+  height: 32px !important;
+}
+
+.mapboxgl-ctrl-group button:last-child {
+  border-bottom: none !important;
+}
