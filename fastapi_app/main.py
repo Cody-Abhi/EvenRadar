@@ -258,11 +258,23 @@ async def match_cv(request_data: CvMatchRequest):
 async def scrape_urls(request_data: ScrapeRequest):
     urls = request_data.urls
     try:
-        # Import the crawl function from scripts/crawl4ai_service.py if available
-        sys.path.insert(0, os.path.join(os.getcwd(), "scripts"))
-        from crawl4ai_service import crawl_urls
+        # Dynamically load crawl4ai_service from scripts/ if available
+        import importlib.util
 
-        result = await crawl_urls(urls)
+        scripts_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "scripts")
+        script_path = os.path.join(scripts_dir, "crawl4ai_service.py")
+        if not os.path.exists(script_path):
+            raise FileNotFoundError(f"Crawl4AI service not found at {script_path}")
+
+        spec = importlib.util.spec_from_file_location("crawl4ai_service", script_path)
+        if not spec or not spec.loader:
+            raise ImportError(f"Cannot load module spec for {script_path}")
+
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        crawl_fn = getattr(module, "crawl_urls")
+
+        result = await crawl_fn(urls)
         pages = [
             ScrapePage(
                 url=p.get("url", ""),
