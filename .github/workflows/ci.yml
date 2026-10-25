@@ -47,5 +47,11 @@ jobs:
           NEXT_PUBLIC_MAPBOX_TOKEN: ${{ secrets.NEXT_PUBLIC_MAPBOX_TOKEN || 'pk.eyJ1IjoiZHVtbXkiLCJhIjoiZHVtbXkifQ.dummy' }}
 
 
+      - name: Start Next.js Production Server
+        run: |
+          npm run start &
+          npx --yes wait-on -t 30000 http-get://localhost:3000/api/openapi.json
+
       - name: Run API Edge Cases & Mock Tests
         run: npm run test:edge
+

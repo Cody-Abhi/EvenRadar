@@ -1,5 +1,11 @@
 import assert from "assert";
 
+if (typeof process.loadEnvFile === "function") {
+  try {
+    process.loadEnvFile(".env.local");
+  } catch {}
+}
+
 console.log("====================================================");
 console.log("   EVENTRADAR API EDGE CASE & MOCK TEST SUITE       ");
 console.log("====================================================\n");

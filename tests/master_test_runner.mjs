@@ -2,6 +2,12 @@ import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
 
+if (typeof process.loadEnvFile === "function") {
+  try {
+    process.loadEnvFile(".env.local");
+  } catch {}
+}
+
 console.log("======================================================================");
 console.log("         EVENTRADAR MASTER UNIFIED API & SYSTEM TEST SUITE           ");
 console.log("======================================================================\n");
