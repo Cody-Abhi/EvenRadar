@@ -176,6 +176,12 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-2">
+          <a
+            href="/docs"
+            className="brutal-sm brutal-press bg-brut-yellow px-3 py-1.5 text-xs font-bold font-mono uppercase tracking-wider hover:bg-black hover:text-white transition"
+          >
+            📖 API Docs
+          </a>
           <span className="brutal-sm bg-brut-lime px-3 py-1.5 text-xs font-bold uppercase">
             ⚡ Powered by Crawl4AI + Gemini + Mapbox
           </span>

@@ -1,0 +1,3 @@
+"""
+EventRadar FastAPI Package
+"""

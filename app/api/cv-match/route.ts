@@ -4,11 +4,12 @@ import { cvProfileSchema, type CvProfile } from "@/lib/cv_match";
 
 const CANDIDATE_MODELS = [
   process.env.GEMINI_MODEL,
+  "gemini-2.5-flash",
+  "gemini-2.5-flash-lite",
   "gemini-3.1-flash-lite",
-  "gemini-3.5-flash-lite",
-  "gemini-flash-lite-latest",
   "gemini-3.5-flash",
-  "gemini-3.7-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-flash-latest",
 ].filter(Boolean) as string[];
 
 let _geminiClient: GoogleGenAI | null = null;
@@ -49,6 +50,59 @@ RULES:
 - If the name is unclear, set candidate_name to null.
 - Ensure recommended_topics are practical event search categories.`;
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS, GET",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+/**
+ * OPTIONS /api/cv-match
+ * Handles CORS preflight requests.
+ */
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: CORS_HEADERS,
+  });
+}
+
+/**
+ * GET /api/cv-match
+ * Returns API usage documentation for CV matching.
+ */
+export async function GET() {
+  return NextResponse.json(
+    {
+      name: "EventRadar CV Matchmaker API",
+      method: "POST",
+      endpoint: "/api/cv-match",
+      description: "Extracts technical profile, key skills, and best event recommendations from candidate CV/resume text or PDF file.",
+      supported_content_types: [
+        "application/json (body: { \"text\": \"...\" })",
+        "multipart/form-data (fields: 'file' [PDF/Text] or 'text')",
+      ],
+      response_schema: {
+        success: "boolean",
+        profile: {
+          candidate_name: "string | null",
+          primary_role: "string",
+          experience_level: "student | junior | mid | senior",
+          top_skills: "string[]",
+          recommended_topics: "string[]",
+          best_search_query: "{ topic: string, location: string }",
+          match_keywords: "string[]",
+          summary: "string",
+        },
+      },
+    },
+    {
+      status: 200,
+      headers: CORS_HEADERS,
+    }
+  );
+}
+
 export async function POST(req: NextRequest) {
   try {
     const contentType = req.headers.get("content-type") || "";
@@ -80,8 +134,12 @@ export async function POST(req: NextRequest) {
         cvText = textParam.trim();
       } else {
         return NextResponse.json(
-          { error: "No CV file or text provided." },
-          { status: 400 }
+          {
+            error: "No CV file or text provided.",
+            code: "MISSING_INPUT",
+            details: "Provide either a 'file' (PDF or text) or a 'text' parameter in multipart/form-data.",
+          },
+          { status: 400, headers: CORS_HEADERS }
         );
       }
     } else {
@@ -89,8 +147,12 @@ export async function POST(req: NextRequest) {
       const body = await req.json().catch(() => ({}));
       if (!body.text || typeof body.text !== "string" || !body.text.trim()) {
         return NextResponse.json(
-          { error: "Please provide resume text in the 'text' field." },
-          { status: 400 }
+          {
+            error: "Please provide resume text in the 'text' field.",
+            code: "MISSING_TEXT_FIELD",
+            details: "JSON payload must contain a non-empty 'text' string field.",
+          },
+          { status: 400, headers: CORS_HEADERS }
         );
       }
       cvText = body.text.trim();
@@ -154,23 +216,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error: "Failed to parse structured CV profile.",
+          code: "VALIDATION_ERROR",
           details: validated.error.format(),
         },
-        { status: 500 }
+        { status: 422, headers: CORS_HEADERS }
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      profile: validated.data,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        profile: validated.data,
+      },
+      { status: 200, headers: CORS_HEADERS }
+    );
   } catch (error: any) {
     console.error("[cv-match] Unhandled error:", error);
     return NextResponse.json(
       {
         error: error?.message || "Internal server error while processing CV.",
+        code: "INTERNAL_SERVER_ERROR",
       },
-      { status: 500 }
+      { status: 500, headers: CORS_HEADERS }
     );
   }
 }

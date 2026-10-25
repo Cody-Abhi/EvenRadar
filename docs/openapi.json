@@ -1,0 +1,499 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "EventRadar API",
+    "description": "High-performance tech-event search and AI-powered CV matchmaker engine. Aggregates hackathons, meetups, and conferences across Devfolio, MLH, Luma, Meetup, Devpost, and search-discovered platforms.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "EventRadar Team",
+      "url": "https://github.com/cody-abhi/evenradar"
+    },
+    "license": {
+      "name": "MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Events",
+      "description": "Live tech-event discovery, scraping, and AI extraction"
+    },
+    {
+      "name": "CV Matchmaker",
+      "description": "AI resume parsing, technical profile extraction, and event recommendation"
+    },
+    {
+      "name": "Specification",
+      "description": "OpenAPI metadata and contract definitions"
+    }
+  ],
+  "paths": {
+    "/api/events": {
+      "get": {
+        "tags": ["Events"],
+        "summary": "Search live tech events",
+        "description": "Fans out to fixed platforms (Devfolio, MLH, Luma, Meetup, Devpost) plus web search discovery, crawls pages via Crawl4AI/TinyFish, extracts structured event listings using Gemini AI, and normalizes, dedupes, and sorts the results.",
+        "operationId": "searchEvents",
+        "parameters": [
+          {
+            "name": "topic",
+            "in": "query",
+            "required": true,
+            "description": "Search keyword or topic (e.g. 'AI hackathon', 'Web3', 'React')",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "example": "AI hackathon"
+            }
+          },
+          {
+            "name": "location",
+            "in": "query",
+            "required": false,
+            "description": "City or country filter. Defaults to 'India'. Alias-aware (Bangalore ≡ Bengaluru, etc.).",
+            "schema": {
+              "type": "string",
+              "default": "India",
+              "example": "Bangalore"
+            }
+          },
+          {
+            "name": "online",
+            "in": "query",
+            "required": false,
+            "description": "When true, limits results to online and hybrid events.",
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "example": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully searched and aggregated events",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventsApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing required 'topic' query parameter",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": "Missing required query param: topic",
+                  "code": "INVALID_ARGUMENT",
+                  "details": "A non-empty 'topic' parameter is required to search tech events."
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method Not Allowed. Use GET.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal pipeline or configuration failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "tags": ["Events"],
+        "summary": "CORS preflight for events endpoint",
+        "responses": {
+          "204": {
+            "description": "CORS preflight successful"
+          }
+        }
+      }
+    },
+    "/api/cv-match": {
+      "post": {
+        "tags": ["CV Matchmaker"],
+        "summary": "Parse candidate CV and match ideal tech events",
+        "description": "Accepts either a raw text resume (JSON body) or an uploaded PDF/text resume file (multipart/form-data). Uses Gemini 2.5/3.x to parse candidate skills, role, experience level, and generate optimal search queries and match keywords.",
+        "operationId": "parseCvMatch",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CvMatchJsonRequest"
+              },
+              "example": {
+                "text": "Abhishek Srivastava\nFullstack AI Engineer | Python, React, Next.js, PyTorch | Bangalore\nBuilt interactive geospatial dashboard with Mapbox GL and real-time LLM agents."
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/CvMatchMultipartRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully parsed candidate profile and recommendations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CvMatchResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No CV file or text provided in request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Structured CV profile validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Gemini AI processing failure or internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["CV Matchmaker"],
+        "summary": "CV Matchmaker endpoint documentation",
+        "description": "Returns descriptive documentation and instructions on how to call POST /api/cv-match.",
+        "responses": {
+          "200": {
+            "description": "API schema and instructions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "tags": ["CV Matchmaker"],
+        "summary": "CORS preflight for cv-match endpoint",
+        "responses": {
+          "204": {
+            "description": "CORS preflight successful"
+          }
+        }
+      }
+    },
+    "/api/openapi.json": {
+      "get": {
+        "tags": ["Specification"],
+        "summary": "Get OpenAPI 3.1 Specification JSON",
+        "description": "Returns the complete OpenAPI 3.1.0 contract for the EventRadar API.",
+        "responses": {
+          "200": {
+            "description": "OpenAPI 3.1 JSON Document",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SearchQuery": {
+        "type": "object",
+        "required": ["topic", "location", "online"],
+        "properties": {
+          "topic": {
+            "type": "string",
+            "example": "AI hackathon"
+          },
+          "location": {
+            "type": "string",
+            "example": "Bangalore"
+          },
+          "online": {
+            "type": "boolean",
+            "example": false
+          }
+        }
+      },
+      "EventItem": {
+        "type": "object",
+        "required": [
+          "name",
+          "start_date",
+          "end_date",
+          "date_text",
+          "mode",
+          "venue_or_city",
+          "event_type",
+          "themes",
+          "eligibility",
+          "registration_url",
+          "source_url",
+          "source_name",
+          "fields_missing",
+          "fetched_at"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Event title/name",
+            "example": "Bangalore AI Hackfest 2026"
+          },
+          "start_date": {
+            "type": ["string", "null"],
+            "format": "date",
+            "description": "ISO start date YYYY-MM-DD",
+            "example": "2026-11-15"
+          },
+          "end_date": {
+            "type": ["string", "null"],
+            "format": "date",
+            "description": "ISO end date YYYY-MM-DD",
+            "example": "2026-11-17"
+          },
+          "date_text": {
+            "type": "string",
+            "description": "Raw unparsed date string directly from the source page",
+            "example": "Nov 15-17, 2026"
+          },
+          "mode": {
+            "type": ["string", "null"],
+            "enum": ["online", "offline", "hybrid", null],
+            "description": "Delivery mode",
+            "example": "hybrid"
+          },
+          "venue_or_city": {
+            "type": ["string", "null"],
+            "description": "Physical venue or city location",
+            "example": "Bangalore, India"
+          },
+          "event_type": {
+            "type": "string",
+            "enum": ["hackathon", "meetup", "conference", "workshop", "other"],
+            "description": "Categorized event format",
+            "example": "hackathon"
+          },
+          "themes": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Extracted themes, technology tracks, or topic tags",
+            "example": ["Artificial Intelligence", "LLMs", "Generative AI"]
+          },
+          "eligibility": {
+            "type": ["string", "null"],
+            "description": "Who can participate",
+            "example": "Open to developers and students"
+          },
+          "registration_url": {
+            "type": ["string", "null"],
+            "format": "uri",
+            "description": "Direct registration link",
+            "example": "https://devfolio.co/hackathons/example"
+          },
+          "source_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Canonical URL where this event was discovered",
+            "example": "https://devfolio.co"
+          },
+          "source_name": {
+            "type": "string",
+            "description": "Name of the platform or domain",
+            "example": "Devfolio"
+          },
+          "fields_missing": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "List of optional fields that were absent on the source page",
+            "example": []
+          },
+          "fetched_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO timestamp when the source was scraped",
+            "example": "2026-10-25T12:00:00.000Z"
+          }
+        }
+      },
+      "SourceStatus": {
+        "type": "object",
+        "required": ["name", "url", "ok", "count", "error"],
+        "properties": {
+          "name": { "type": "string", "example": "Devfolio" },
+          "url": { "type": "string", "format": "uri", "example": "https://devfolio.co/hackathons" },
+          "ok": { "type": "boolean", "example": true },
+          "count": { "type": "integer", "example": 7 },
+          "error": { "type": ["string", "null"], "example": null }
+        }
+      },
+      "EventsApiResponse": {
+        "type": "object",
+        "required": ["query", "events", "sources", "errors", "tookMs"],
+        "properties": {
+          "query": { "$ref": "#/components/schemas/SearchQuery" },
+          "events": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/EventItem" }
+          },
+          "sources": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SourceStatus" }
+          },
+          "errors": {
+            "type": "array",
+            "items": { "type": "string" },
+            "example": []
+          },
+          "tookMs": {
+            "type": "integer",
+            "description": "Total pipeline execution latency in milliseconds",
+            "example": 8421
+          }
+        }
+      },
+      "CvProfile": {
+        "type": "object",
+        "required": [
+          "candidate_name",
+          "primary_role",
+          "experience_level",
+          "top_skills",
+          "recommended_topics",
+          "best_search_query",
+          "match_keywords",
+          "summary"
+        ],
+        "properties": {
+          "candidate_name": { "type": ["string", "null"], "example": "Abhishek Srivastava" },
+          "primary_role": { "type": "string", "example": "Fullstack AI Engineer" },
+          "experience_level": {
+            "type": "string",
+            "enum": ["student", "junior", "mid", "senior"],
+            "example": "mid"
+          },
+          "top_skills": {
+            "type": "array",
+            "items": { "type": "string" },
+            "example": ["Python", "TypeScript", "React", "Next.js", "PyTorch", "Mapbox GL"]
+          },
+          "recommended_topics": {
+            "type": "array",
+            "items": { "type": "string" },
+            "example": ["AI & Generative AI", "Fullstack Web", "Geospatial AI"]
+          },
+          "best_search_query": {
+            "type": "object",
+            "required": ["topic", "location"],
+            "properties": {
+              "topic": { "type": "string", "example": "AI Hackathon" },
+              "location": { "type": "string", "example": "Bangalore" }
+            }
+          },
+          "match_keywords": {
+            "type": "array",
+            "items": { "type": "string" },
+            "example": ["ai", "python", "fullstack", "react", "llm", "rag"]
+          },
+          "summary": {
+            "type": "string",
+            "example": "Fullstack AI developer with strong expertise in Next.js, Python, and geospatial LLM applications."
+          }
+        }
+      },
+      "CvMatchJsonRequest": {
+        "type": "object",
+        "required": ["text"],
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "Raw resume or candidate profile text",
+            "example": "Abhishek Srivastava\nFullstack AI Developer..."
+          }
+        }
+      },
+      "CvMatchMultipartRequest": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "description": "PDF or plain text resume file"
+          },
+          "text": {
+            "type": "string",
+            "description": "Optional fallback plain text resume"
+          }
+        }
+      },
+      "CvMatchResponse": {
+        "type": "object",
+        "required": ["success", "profile"],
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "profile": { "$ref": "#/components/schemas/CvProfile" }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "error": { "type": "string", "example": "Missing required query param: topic" },
+          "code": { "type": "string", "example": "INVALID_ARGUMENT" },
+          "details": { "type": ["string", "object", "array", "null"], "example": null },
+          "query": { "$ref": "#/components/schemas/SearchQuery" }
+        }
+      }
+    }
+  }
+}

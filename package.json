@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --env-file=.env.local tests/master_test_runner.mjs",
+    "test:fastapi": "pytest fastapi_app/test_api.py -v",
+    "test:edge": "node --env-file=.env.local tests/test_api_edge_cases_and_mocks.mjs",
+    "test:core": "node --env-file=.env.local tests/run_all_tests.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.31.0",
