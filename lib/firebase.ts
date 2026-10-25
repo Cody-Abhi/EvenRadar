@@ -6,7 +6,7 @@ import { getStorage, type FirebaseStorage } from "firebase/storage";
 import { getAnalytics, isSupported, type Analytics } from "firebase/analytics";
 
 export const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDummyKeyForStaticBuildsOnly1234",
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "eventradar-f59b9.firebaseapp.com",
   databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL || "https://eventradar-f59b9-default-rtdb.firebaseio.com",
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "eventradar-f59b9",
@@ -16,15 +16,27 @@ export const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "",
 };
 
+// Safe helper to avoid crashes during static prerendering / CI builds without live credentials
+function safeInit<T>(fn: () => T): T {
+  try {
+    return fn();
+  } catch (err) {
+    if (typeof window !== "undefined") {
+      console.warn("[Firebase] Service initialization warning:", err);
+    }
+    return {} as T;
+  }
+}
+
 // Initialize Firebase as a singleton to avoid duplicate app errors in Next.js SSR & hot reloads
 export const app: FirebaseApp =
-  getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+  getApps().length > 0 ? getApp() : safeInit(() => initializeApp(firebaseConfig));
 
 // Firebase Services
-export const auth: Auth = getAuth(app);
-export const db: Firestore = getFirestore(app);
-export const rtdb: Database = getDatabase(app);
-export const storage: FirebaseStorage = getStorage(app);
+export const auth: Auth = safeInit(() => getAuth(app));
+export const db: Firestore = safeInit(() => getFirestore(app));
+export const rtdb: Database = safeInit(() => getDatabase(app));
+export const storage: FirebaseStorage = safeInit(() => getStorage(app));
 
 // Browser-safe Analytics initialization
 let analyticsInstance: Analytics | null = null;

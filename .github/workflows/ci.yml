@@ -43,6 +43,9 @@ jobs:
           NEXT_TELEMETRY_DISABLED: 1
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || 'mock-key' }}
           TINYFISH_API_KEY: ${{ secrets.TINYFISH_API_KEY || 'mock-key' }}
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY || 'AIzaSyDummyKeyForStaticBuildsOnly1234' }}
+          NEXT_PUBLIC_MAPBOX_TOKEN: ${{ secrets.NEXT_PUBLIC_MAPBOX_TOKEN || 'pk.eyJ1IjoiZHVtbXkiLCJhIjoiZHVtbXkifQ.dummy' }}
+
 
       - name: Run API Edge Cases & Mock Tests
         run: npm run test:edge
